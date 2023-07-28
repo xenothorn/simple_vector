@@ -7,8 +7,6 @@
 
 #include <iostream>
 
-
-
 template <typename Type>
 class SimpleVector {
 public:
@@ -16,37 +14,67 @@ public:
     using ConstIterator = const Type*;
 
     SimpleVector() noexcept = default;
- 
+
     // Создаёт вектор из size элементов, инициализированных значением по умолчанию
     explicit SimpleVector(size_t size) {
         // Напишите тело конструктора самостоятельно
-        SimpleVector tmp;
-        tmp.items_ = new Type[size];
-        tmp.capacity_ = size;
-        tmp.size_ = size;
-        swap(tmp);
+        if (size == 0)
+        {
+            size_ = 0;
+            capacity_ = 0;
+            items_ = nullptr;
+        }
+        else
+        {
+            SimpleVector tmp;
+            tmp.items_ = new Type[size];
+            tmp.capacity_ = size;
+            tmp.size_ = size;
+            std::fill(tmp.begin(), tmp.end(), Type{});
+            swap(tmp);
+        }
+
     }
 
     // Создаёт вектор из size элементов, инициализированных значением value
     SimpleVector(size_t size, const Type& value) {
         // Напишите тело конструктора самостоятельно
-        SimpleVector tmp;
-        tmp.items_ = new Type[size];
-        tmp.capacity_ = size;
-        tmp.size_ = size;
-        std::fill(tmp.begin(), tmp.end(), value);
-        swap(tmp);
+        if (size == 0)
+        {
+            size_ = 0;
+            capacity_ = 0;
+            items_ = nullptr;
+        }
+        else
+        {
+            SimpleVector tmp;
+            tmp.items_ = new Type[size];
+            tmp.capacity_ = size;
+            tmp.size_ = size;
+            std::fill(tmp.begin(), tmp.end(), value);
+            swap(tmp);
+        }
     }
 
     // Создаёт вектор из std::initializer_list
     SimpleVector(std::initializer_list<Type> init) {
-        SimpleVector tmp(init.size());
-        int i = 0;
-        for (auto it = init.begin(); it != init.end(); ++it)
+        if (init.size() == 0)
         {
-            tmp[i++] = *it;
+            std::cout << " inlinst 0" << std::endl;
+            size_ = 0;
+            capacity_ = 0;
+            items_ = nullptr;
         }
-        swap(tmp);
+        else
+        {
+            SimpleVector tmp(init.size());
+            size_t i = 0;
+            for (auto it = init.begin(); it != init.end(); ++it)
+            {
+                tmp[i++] = *it;
+            }
+            swap(tmp);
+        }
     }
 
     ~SimpleVector()
@@ -71,12 +99,12 @@ public:
 
     // Возвращает ссылку на элемент с индексом index
     Type& operator[](size_t index) noexcept {
-        return items_[index];
+        return *(this->items_+index);
     }
 
     // Возвращает константную ссылку на элемент с индексом index
     const Type& operator[](size_t index) const noexcept {
-        return items_[index];
+        return *(this->items_+index);
     }
 
     // Возвращает константную ссылку на элемент с индексом index
@@ -107,7 +135,6 @@ public:
         if (new_size <= size_) size_ = new_size;
         else if (new_size <= capacity_)
         {
-            std::cout << "tut" <<std::endl;
             auto it = end();
             size_ = new_size;
             std::fill(it, end(), Type{});
@@ -115,30 +142,9 @@ public:
         else
         {
             SimpleVector tmp(new_size);
-            //std::fill(tmp.begin(), tmp.end(), Type{});
+            std::fill(tmp.begin(), tmp.end(), Type{});
             std::copy(begin(), end(), tmp.begin());
-
-            std::cout <<"before swap : ";
-            for (auto it = tmp.begin(); it < tmp.end(); it++)
-            {
-                std::cout << *it << ' ';
-            }std::cout << "test" << std::endl;
-
-            std::cout << tmp.items_ << " --- " << items_ << std::endl;
-            std::cout << tmp.size_ << " --- " << size_ << std::endl;
-            std::cout << tmp.capacity_ << " --- " << capacity_ << std::endl;
-
-
-
-
-
-
-            std::cout <<"right after swap : ";
-            for (auto it = begin(); it != end(); it++)
-            {
-                std::cout << *it << ' ';
-            }std::cout << std::endl;
-
+            swap(tmp);
         }
     }
 
