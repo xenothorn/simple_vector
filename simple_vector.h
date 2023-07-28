@@ -13,6 +13,13 @@ public:
     using Iterator = Type*;
     using ConstIterator = const Type*;
 
+    void ZeroInit()
+    {
+        size_ = 0;
+        capacity_ = 0;
+        items_ = nullptr;
+    }
+
     SimpleVector() noexcept = default;
 
     // Создаёт вектор из size элементов, инициализированных значением по умолчанию
@@ -20,9 +27,7 @@ public:
         // Напишите тело конструктора самостоятельно
         if (size == 0)
         {
-            size_ = 0;
-            capacity_ = 0;
-            items_ = nullptr;
+            ZeroInit();
         }
         else
         {
@@ -41,9 +46,7 @@ public:
         // Напишите тело конструктора самостоятельно
         if (size == 0)
         {
-            size_ = 0;
-            capacity_ = 0;
-            items_ = nullptr;
+            ZeroInit();
         }
         else
         {
@@ -56,23 +59,30 @@ public:
         }
     }
 
+    SimpleVector(const SimpleVector& other)
+    {
+        if (other.GetSize() == 0)
+        {
+            ZeroInit();
+        }
+        else
+        {
+            SimpleVector tmp(other.GetSize());
+            std::copy(other.begin(), other.end(), tmp.begin());
+            swap(tmp);
+        }
+    }
+
     // Создаёт вектор из std::initializer_list
     SimpleVector(std::initializer_list<Type> init) {
         if (init.size() == 0)
         {
-            std::cout << " inlinst 0" << std::endl;
-            size_ = 0;
-            capacity_ = 0;
-            items_ = nullptr;
+            ZeroInit();
         }
         else
         {
             SimpleVector tmp(init.size());
-            size_t i = 0;
-            for (auto it = init.begin(); it != init.end(); ++it)
-            {
-                tmp[i++] = *it;
-            }
+            std::copy(init.begin(), init.end(), tmp.begin());
             swap(tmp);
         }
     }
@@ -80,6 +90,13 @@ public:
     ~SimpleVector()
     {
         delete [] items_;
+    }
+
+    SimpleVector& operator=(const SimpleVector& rhs)
+    {
+        SimpleVector tmp(rhs);
+        swap(tmp);
+        return *this;
     }
 
     // Возвращает количество элементов в массиве
@@ -131,7 +148,6 @@ public:
     // Изменяет размер массива.
     // При увеличении размера новые элементы получают значение по умолчанию для типа Type
     void Resize(size_t new_size) {
-        // Напишите тело самостоятельно
         if (new_size <= size_) size_ = new_size;
         else if (new_size <= capacity_)
         {
@@ -146,6 +162,74 @@ public:
             std::copy(begin(), end(), tmp.begin());
             swap(tmp);
         }
+    }
+
+    void PushBack(const Type& value)
+    {
+        if (items_ == nullptr)
+        {
+            SimpleVector tmp(1,value);
+            swap(tmp);
+        }
+        else
+        {
+            if (size_ < capacity_)
+            {
+                items_[size_] = value;
+                ++size_;
+            }
+            else
+            {
+                SimpleVector tmp(capacity_ * 2);
+                std::copy(begin(), end(), tmp.begin());
+                tmp[size_] = value;
+                tmp.size_ = ++size_;
+                swap(tmp);
+            }
+        }
+    }
+
+    void PopBack() noexcept
+    {
+        if (size_ > 0)
+        {
+            --size_;
+        }
+    }
+
+    Iterator Insert(ConstIterator pos, const Type& value)
+    {
+        size_t d = pos - begin();
+        size_t e = end() - begin();
+        if (size_ < capacity_)
+        {
+            ++size_;
+            std::copy_backward(begin()+d, begin()+e, this->end());
+            *(begin() + d) = value;
+        }
+        else
+        {
+            SimpleVector tmp(capacity_ * 2);
+            std::copy(begin(), end(), tmp.begin());
+            tmp.size_ = size_;
+            swap(tmp);
+            ++size_;
+            std::copy_backward(begin()+d, begin()+e, this->end());
+            *(begin() + d) = value;
+        }
+        return (begin()+d);
+    }
+
+    Iterator Erase(ConstIterator pos)
+    {
+        if (size_ > 0)
+        {
+            auto beg = pos - begin();
+            std::copy(begin()+beg+1, end(), begin()+beg);
+            --size_;
+            return begin() + beg + 1;
+        }
+        return end();
     }
 
 
@@ -181,7 +265,8 @@ public:
     // Для пустого массива может быть равен (или не равен) nullptr
     ConstIterator end() const noexcept {
         if (size_ == 0) return nullptr;
-        else return (items_ + size_);
+        else
+            return (items_ + size_);
     }
 
     // Возвращает константный итератор на начало массива
@@ -207,4 +292,34 @@ private:
 template <typename T>
 void swap(SimpleVector<T> v, SimpleVector<T> t) noexcept {
     std::swap(v, t);
+}
+
+template <typename Type>
+inline bool operator==(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
+    return (std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()));
+}
+
+template <typename Type>
+inline bool operator!=(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
+    return (!(lhs == rhs));
+}
+
+template <typename Type>
+inline bool operator<(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
+    return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
+template <typename Type>
+inline bool operator<=(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
+    return (lhs < rhs) || (lhs == rhs);
+}
+
+template <typename Type>
+inline bool operator>(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
+    return !(lhs < rhs) && (lhs != rhs);
+}
+
+template <typename Type>
+inline bool operator>=(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
+    return !(lhs < rhs);
 }
